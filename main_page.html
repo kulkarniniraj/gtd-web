@@ -144,39 +144,8 @@
 
             <!-- Task List -->
             <div class="flex-1 overflow-y-auto p-6">
-                <div class="space-y-2 max-w-4xl mx-auto">
-                    <!-- Task 1 -->
-                    <div class="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-lg border-b border-gray-200 cursor-pointer">
-                        <input type="checkbox" class="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-gray-400 text-green-500 focus:ring-green-500">
-                        <div class="flex-1">
-                            <p class="text-base text-gray-800">create datasets management webapp</p>
-                            <div class="flex items-center gap-4 flex-wrap mt-1">
-                                <span class="flex items-center gap-1.5 text-sm text-red-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    Today
-                                </span>
-                                <span class="flex items-center gap-1.5 px-2 py-0.5 rounded text-sm font-medium bg-yellow-100 text-yellow-800">
-                                    <span class="font-semibold text-gray-400">#</span>
-                                    maybe
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Task 2 -->
-                    <div class="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-lg border-b border-gray-200 cursor-pointer">
-                        <input type="checkbox" class="mt-1 flex-shrink-0 w-5 h-5 rounded-full border-gray-400 text-green-500 focus:ring-green-500">
-                        <div class="flex-1">
-                            <p class="text-base text-gray-800">create local docker repository</p>
-                            <div class="flex items-center gap-4 flex-wrap mt-1">
-                                <span class="flex items-center gap-1.5 px-2 py-0.5 rounded text-sm font-medium bg-gray-100 text-gray-600">
-                                    <span class="font-semibold text-gray-400">#</span>
-                                    default
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
+                <div id="inbox-task-list" class="space-y-2 max-w-4xl mx-auto" hx-get="/tasks-list" hx-trigger="load">
+                    <div class="p-4 text-center text-gray-500">Loading tasks...</div>
                 </div>
             </div>
         </main>
@@ -277,6 +246,120 @@
             </div>
         </div>
     </div>
+
+    <!-- HTMX Library -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Basic JavaScript for modal handling and keyboard shortcuts -->
+    <script>
+        // Modal helper functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Focus first input in modal
+                const firstInput = modal.querySelector('input, textarea');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const newTaskModal = document.getElementById('newTaskModal');
+            const editTaskModal = document.getElementById('editTaskModal');
+            
+            if (newTaskModal && !newTaskModal.querySelector('.bg-white').contains(event.target) && !event.target.closest('button[data-open-modal="newTaskModal"]')) {
+                if (!newTaskModal.classList.contains('hidden') && event.target === newTaskModal) {
+                    closeModal('newTaskModal');
+                }
+            }
+            
+            if (editTaskModal && !editTaskModal.querySelector('.bg-white').contains(event.target)) {
+                if (!editTaskModal.classList.contains('hidden') && event.target === editTaskModal) {
+                    closeModal('editTaskModal');
+                }
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal('newTaskModal');
+                closeModal('editTaskModal');
+            }
+        });
+
+        // Add task button - open new task modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const addTaskButtons = document.querySelectorAll('button');
+            addTaskButtons.forEach(button => {
+                if (button.textContent.includes('Add task') && !button.hasAttribute('data-open-modal')) {
+                    button.setAttribute('data-open-modal', 'newTaskModal');
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        openModal('newTaskModal');
+                    });
+                }
+            });
+
+            // Cancel buttons - close modals
+            document.querySelectorAll('button').forEach(button => {
+                if (button.textContent.trim() === 'Cancel') {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const modal = this.closest('[id$="Modal"]');
+                        if (modal) {
+                            closeModal(modal.id);
+                        }
+                    });
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Q - Open add task modal (only if not typing in an input)
+            if (event.key === 'q' || event.key === 'Q') {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                    openModal('newTaskModal');
+                }
+            }
+
+            // F - Focus search input (only if not typing in an input)
+            if (event.key === 'f' || event.key === 'F') {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                    const searchInput = document.querySelector('input[placeholder="Search"]');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }
+            }
+        });
+
+        // HTMX event listeners for better UX
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            // After HTMX swaps content, you can add custom logic here
+            console.log('HTMX swap completed', event.detail);
+        });
+
+        document.body.addEventListener('htmx:responseError', function(event) {
+            console.error('HTMX request error', event.detail);
+            alert('An error occurred. Please try again.');
+        });
+    </script>
 
 </body>
 </html>
