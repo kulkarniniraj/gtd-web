@@ -6,11 +6,19 @@ from datetime import datetime, date
 from pathlib import Path
 from starlette.responses import HTMLResponse
 
+from pydantic import BaseModel # Added this import
+
 # Initialize the in-memory storage
 storage = InMemoryStorage()
 
 # FastHTML App Initialization - using idiomatic pattern
 app, rt = fast_app()
+
+# Pydantic model for adding a new task from the form
+class AddTaskForm(BaseModel):
+    title: str
+    description: Optional[str] = None
+    project: Optional[str] = None
 
 # Helper function to render a single task item HTML using FastHTML DSL
 def render_task_item(task: Task):
@@ -82,7 +90,23 @@ def get_tasks_list():
     """Fetch and render the list of tasks in the inbox"""
     tasks = storage.get_tasks()  # Inbox tasks
     task_items = [render_task_item(task) for task in tasks]
-    return Div(*task_items, id="inbox-task-list")
+    return Div(*task_items, id="inbox-task-list-inner")
+
+@rt("/add-task")
+def post(form: AddTaskForm):
+    """Handles adding a new task from the modal form."""
+    task_data = form.model_dump(exclude_unset=True)
+    
+    # Ensure project is "default" if not provided or empty string
+    if task_data.get('project') is None or task_data.get('project').strip() == '':
+        task_data['project'] = 'default'
+    
+    storage.add_task(task_data)
+    
+    # Re-render the task list and send a header to trigger modal closure
+    response = get_tasks_list()
+    # response.hx_trigger = "taskAdded"
+    return Response(to_xml(response), headers={"HX-Trigger": "taskAdded"})
 
 # Index route - serves the main HTML page
 @rt
