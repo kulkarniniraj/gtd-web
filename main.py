@@ -1,8 +1,9 @@
+import calendar
 from fasthtml.common import *
 from fasthtml.svg import *
 from fasthtml.svg import Path as SvgPath
 from in_memory_storage import InMemoryStorage, Task
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 from starlette.responses import HTMLResponse
 
@@ -25,6 +26,7 @@ class EditTaskForm(BaseModel):
     title: str
     description: Optional[str] = None
     project: Optional[str] = None
+    schedule: Optional[str] = None # Added schedule field
 
 # Helper function to render a single task item HTML using FastHTML DSL
 def render_task_item(task: Task):
@@ -135,12 +137,15 @@ def get(task_id: int):
             cls="mb-4"
         ),
         Div(
-            Button(
-                Svg(SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"),
-                    cls="w-5 h-4", fill="none", stroke="currentColor", viewBox="0 0 24 24"),
-                "Date",
-                type="button",
-                cls="flex items-center gap-1.5 px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300"
+            Select(
+                Option("No Date", value="none", selected=task.schedule is None or task.schedule == ""),
+                Option("Today", value="today", selected=task.schedule == "today"),
+                Option("This Week", value="week", selected=task.schedule == "week"),
+                Option("This Month", value="month", selected=task.schedule == "month"),
+                Option("Maybe", value="maybe", selected=task.schedule == "maybe"),
+                name="schedule",
+                id="editTaskSchedule",
+                cls="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base"
             ),
             Input(type="text", id="editTaskProject", name="project", value=task.project if task.project != "default" else "",
                   cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base", placeholder="Project (e.g., #Work)"),
@@ -164,6 +169,40 @@ async def put(task_id: int, form: EditTaskForm):
     """Handles updating an existing task from the modal form."""
     update_data = form.model_dump(exclude_unset=True)
 
+    # Calculate due_date based on schedule
+    schedule = form.schedule
+    due_date = None
+    new_state = None # To store potential new state
+
+    if schedule == "today":
+        due_date = date.today()
+        new_state = "active" # A task with a 'today' schedule should be active
+    elif schedule == "week":
+        today = date.today()
+        # Calculate days until next Friday (weekday 4)
+        days_until_friday = (4 - today.weekday() + 7) % 7
+        due_date = today + timedelta(days=days_until_friday)
+        new_state = "active" # A task with a 'week' schedule should be active
+    elif schedule == "month":
+        today = date.today()
+        year = today.year
+        month = today.month
+        last_day = calendar.monthrange(year, month)[1]
+        due_date = date(year, month, last_day)
+        new_state = "active" # A task with a 'month' schedule should be active
+    elif schedule == "maybe":
+        due_date = None
+        new_state = "maybe" # Set state to 'maybe' if schedule is 'maybe'
+    elif schedule == "none": # Explicitly "none" or if schedule is not provided, clear due_date
+        due_date = None
+        new_state = "inbox" # Move it back to inbox if no specific schedule
+
+    update_data['due_date'] = due_date
+    update_data['schedule'] = schedule # Store the selected schedule string
+
+    if new_state:
+        update_data['state'] = new_state
+
     # Ensure project is "default" if not provided or empty string
     if update_data.get('project') is None or update_data.get('project').strip() == '':
         update_data['project'] = 'default'
@@ -174,7 +213,6 @@ async def put(task_id: int, form: EditTaskForm):
 
     # Re-render the task list and send a header to trigger modal closure
     response = get_tasks_list()
-    # response.headers['HX-Trigger'] = 'taskEdited'
     return Response(to_xml(response), headers={"HX-Trigger": "taskEdited"})
 
 # Index route - serves the main HTML page
