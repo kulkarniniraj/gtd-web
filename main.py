@@ -20,6 +20,12 @@ class AddTaskForm(BaseModel):
     description: Optional[str] = None
     project: Optional[str] = None
 
+# Pydantic model for editing an existing task from the form
+class EditTaskForm(BaseModel):
+    title: str
+    description: Optional[str] = None
+    project: Optional[str] = None
+
 # Helper function to render a single task item HTML using FastHTML DSL
 def render_task_item(task: Task):
     date_label = ""
@@ -107,6 +113,69 @@ def post(form: AddTaskForm):
     response = get_tasks_list()
     # response.hx_trigger = "taskAdded"
     return Response(to_xml(response), headers={"HX-Trigger": "taskAdded"})
+
+@rt("/get-task-data/{task_id}")
+def get(task_id: int):
+    """Fetches a single task's data and renders the edit form."""
+    task = storage.get_task_by_id(task_id)
+    if not task:
+        return Div("Task not found", cls="text-red-500")
+
+    return Form(
+        Div(
+            Label("Task name", fr="editTaskName", cls="block text-base font-medium text-gray-700 mb-2"),
+            Input(type="text", id="editTaskName", name="title", value=task.title,
+                  cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base"),
+            cls="mb-4"
+        ),
+        Div(
+            Label("Description", fr="editTaskDescription", cls="block text-base font-medium text-gray-700 mb-2"),
+            Textarea(task.description or "", id="editTaskDescription", name="description", 
+                     cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-y h-24 text-base"),
+            cls="mb-4"
+        ),
+        Div(
+            Button(
+                Svg(SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"),
+                    cls="w-5 h-4", fill="none", stroke="currentColor", viewBox="0 0 24 24"),
+                "Date",
+                type="button",
+                cls="flex items-center gap-1.5 px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300"
+            ),
+            Input(type="text", id="editTaskProject", name="project", value=task.project if task.project != "default" else "",
+                  cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base", placeholder="Project (e.g., #Work)"),
+            cls="flex items-center gap-4 mb-6"
+        ),
+        Div(
+            Button("Cancel", type="button", onclick="closeModal('editTaskModal')",
+                   cls="px-5 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md"),
+            Button("Save changes", type="submit",
+                   cls="px-5 py-2.5 text-base font-medium text-white bg-red-500 hover:bg-red-600 rounded-md"),
+            cls="flex items-center justify-end gap-3"
+        ),
+        hx_put=f"/update-task/{task.id}", # HTMX PUT request to update task
+        hx_target="#inbox-task-list",       # Target to replace after update
+        hx_swap="innerHTML",                # Swap innerHTML of the target
+        # hx_trigger="taskEdited from:body"  # Custom event to close modal after success
+    )
+
+@rt("/update-task/{task_id}")
+async def put(task_id: int, form: EditTaskForm):
+    """Handles updating an existing task from the modal form."""
+    update_data = form.model_dump(exclude_unset=True)
+
+    # Ensure project is "default" if not provided or empty string
+    if update_data.get('project') is None or update_data.get('project').strip() == '':
+        update_data['project'] = 'default'
+
+    updated_task = storage.update_task(task_id, update_data)
+    if not updated_task:
+        return Div("Task not found or failed to update", cls="text-red-500")
+
+    # Re-render the task list and send a header to trigger modal closure
+    response = get_tasks_list()
+    # response.headers['HX-Trigger'] = 'taskEdited'
+    return Response(to_xml(response), headers={"HX-Trigger": "taskEdited"})
 
 # Index route - serves the main HTML page
 @rt
