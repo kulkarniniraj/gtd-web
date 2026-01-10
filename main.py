@@ -99,6 +99,12 @@ def get_tasks(view: str = "inbox"): # Renamed function, added view parameter
     if view == "today":
         tasks = storage.get_tasks(due_date=date.today())
         header_title = "Today"
+    elif view == "active":
+        tasks = storage.get_tasks(state="active")
+        header_title = "Active"
+    elif view == "maybe":
+        tasks = storage.get_tasks(state="maybe")
+        header_title = "Maybe"
     elif view == "inbox": # Default to "inbox"
         tasks = storage.get_tasks(state="inbox")
         header_title = "Inbox"
@@ -179,31 +185,30 @@ def render_sidebar(current_view: str):
                         href="/tasks?view=today", hx_get="/tasks?view=today", hx_target="#inbox-task-list-inner", hx_push_url="true",
                         cls=get_link_classes("today")
                     ),
-                    A(
-                        Div(
-                            Svg(
-                                SvgPath(stroke_linecap="round", stroke_linejoin="round", d="M13 10V3L4 14h7v7l9-11h-7z"),
-                                cls="w-5 h-5", fill="none", stroke="currentColor", viewBox="0 0 24 24"
-                            ),
-                            Span("Active"),
-                            cls="flex items-center gap-3"
-                        ),
-                        href="#",
-                        cls=get_link_classes("active")
-                    ),
-                    A(
-                        Div(
-                            Svg(
-                                SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"),
-                                cls="w-5 h-5", fill="none", stroke="currentColor", viewBox="0 0 24 24"
-                            ),
-                            Span("Maybe"),
-                            cls="flex items-center gap-3"
-                        ),
-                        href="#",
-                        cls=get_link_classes("maybe")
-                    ),
-                    cls="space-y-1.5"
+                                        A(
+                                            Div(
+                                                Svg(
+                                                    SvgPath(stroke_linecap="round", stroke_linejoin="round", d="M13 10V3L4 14h7v7l9-11h-7z"),
+                                                    cls="w-5 h-5", fill="none", stroke="currentColor", viewBox="0 0 24 24"
+                                                ),
+                                                Span("Active"),
+                                                cls="flex items-center gap-3"
+                                            ),
+                                            href="/tasks?view=active", hx_get="/tasks?view=active", hx_target="#inbox-task-list-inner", hx_push_url="true",
+                                            cls=get_link_classes("active")
+                                        ),
+                                        A(
+                                            Div(
+                                                Svg(
+                                                    SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"),
+                                                    cls="w-5 h-5", fill="none", stroke="currentColor", viewBox="0 0 24 24"
+                                                ),
+                                                Span("Maybe"),
+                                                cls="flex items-center gap-3"
+                                            ),
+                                            href="/tasks?view=maybe", hx_get="/tasks?view=maybe", hx_target="#inbox-task-list-inner", hx_push_url="true",
+                                            cls=get_link_classes("maybe")
+                                        ),                    cls="space-y-1.5"
                 ),
                 Hr(cls="my-4 border-gray-200"),
                 Div(
