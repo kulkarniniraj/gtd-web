@@ -49,7 +49,7 @@
 
     <div class="flex flex-1">
         <!-- Left Sidebar -->
-        <aside class="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <aside id="left-sidebar" class="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
             <div class="flex flex-col flex-1">
                 <!-- Header -->
                 <div class="p-5 border-b border-gray-200">
@@ -80,7 +80,7 @@
                 <div class="flex-1 overflow-y-auto px-5">
                     <!-- Section 1: Primary Views -->
                     <div class="space-y-1.5">
-                        <a href="#"
+                        <a href="/tasks?view=inbox" hx-get="/tasks?view=inbox" hx-target="#inbox-task-list-inner" hx-push-url="true"
                             class="flex items-center justify-between px-3 py-2 rounded-lg bg-orange-100 text-orange-600 font-medium text-base">
                             <div class="flex items-center gap-3">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@
                             </div>
                             <span class="text-sm font-semibold">13</span>
                         </a>
-                        <a href="#"
+                        <a href="/tasks?view=today" hx-get="/tasks?view=today" hx-target="#inbox-task-list-inner" hx-push-url="true"
                             class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
                             <div class="flex items-center gap-3">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,6 @@
                                 </svg>
                                 <span>Today</span>
                             </div>
-                            <span class="text-sm text-gray-500">8</span>
                         </a>
                         <a href="#"
                             class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
@@ -190,14 +189,14 @@
             <!-- Top Bar -->
             <div class="p-5 border-b border-gray-200">
                 <div class="max-w-4xl mx-auto flex items-center justify-between">
-                    <h1 class="text-2xl font-bold">Inbox</h1>
+                    <h1 id="main-content-header" class="text-2xl font-bold">Inbox</h1>
                     <!-- Icons removed as per design decisions -->
                 </div>
             </div>
 
             <!-- Task List -->
             <div class="flex-1 overflow-y-auto p-6">
-                <div id="inbox-task-list" class="space-y-2 max-w-4xl mx-auto" hx-get="/tasks-list" hx-trigger="load">
+                <div id="inbox-task-list" class="space-y-2 max-w-4xl mx-auto" hx-get="/tasks" hx-trigger="load">
                     <div class="p-4 text-center text-gray-500">Loading tasks...</div>
                 </div>
             </div>
@@ -229,7 +228,7 @@
         <!-- Modal -->
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 relative p-6">
             <!-- Modal Content -->
-            <form hx-post="/add-task" hx-target="#inbox-task-list" hx-swap="innerHTML">
+            <form hx-post="/add-task" hx-target="#inbox-task-list-inner" hx-swap="innerHTML">
                 <!-- Task name -->
                 <div class="mb-4">
                     <label for="taskName" class="block text-base font-medium text-gray-700 mb-2">Task name</label>
@@ -272,87 +271,86 @@
     </div>
     <!-- </div> -->
 
-        <!-- Edit Task Modal Overlay -->
+    <!-- Edit Task Modal Overlay -->
 
-        <div id="editTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"> <!-- Hidden by default -->
+    <div id="editTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"> <!-- Hidden by default -->
 
-            <!-- Modal -->
+        <!-- Modal -->
 
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 relative p-6">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 relative p-6">
 
-                <!-- Modal Content -->
+            <!-- Modal Content -->
 
-                <div id="editTaskModal-content-area">
+            <div id="editTaskModal-content-area">
 
-                    <form hx-put="/update-task/{{task.id}}" hx-target="#inbox-task-list" hx-swap="innerHTML">
+                                    <form hx-put="/update-task/{{task.id}}" hx-target="#inbox-task-list-inner" hx-swap="innerHTML">
+                    <!-- Task name -->
 
-                        <!-- Task name -->
+                    <div class="mb-4">
 
-                        <div class="mb-4">
+                        <label for="editTaskName" class="block text-base font-medium text-gray-700 mb-2">Task name</label>
 
-                            <label for="editTaskName" class="block text-base font-medium text-gray-700 mb-2">Task name</label>
+                        <input type="text" id="editTaskName" name="title" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" value="">
 
-                            <input type="text" id="editTaskName" name="title" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" value="">
+                    </div>
 
-                        </div>
 
-    
 
-                        <!-- Description -->
+                    <!-- Description -->
 
-                        <div class="mb-4">
+                    <div class="mb-4">
 
-                            <label for="editTaskDescription" class="block text-base font-medium text-gray-700 mb-2">Description</label>
+                        <label for="editTaskDescription" class="block text-base font-medium text-gray-700 mb-2">Description</label>
 
-                            <textarea id="editTaskDescription" name="description" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-y h-24 text-base"></textarea>
+                        <textarea id="editTaskDescription" name="description" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-y h-24 text-base"></textarea>
 
-                        </div>
+                    </div>
 
-    
 
-                        <!-- Action buttons row -->
 
-                        <div class="flex items-center gap-4 mb-6">
+                    <!-- Action buttons row -->
 
-                            <button type="button" class="flex items-center gap-1.5 px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300">
+                    <div class="flex items-center gap-4 mb-6">
 
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <button type="button" class="flex items-center gap-1.5 px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300">
 
-                                Date
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
 
-                            </button>
+                            Date
 
-                            <input type="text" id="editTaskProject" name="project" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" placeholder="Project (e.g., #Work)" value="">
+                        </button>
 
-                        </div>
+                        <input type="text" id="editTaskProject" name="project" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" placeholder="Project (e.g., #Work)" value="">
 
-    
+                    </div>
 
-                        <!-- Bottom buttons -->
 
-                        <div class="flex items-center justify-end gap-3">
 
-                            <button type="button" onclick="closeModal('editTaskModal')" class="px-5 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
+                    <!-- Bottom buttons -->
 
-                                Cancel
+                    <div class="flex items-center justify-end gap-3">
 
-                            </button>
+                        <button type="button" onclick="closeModal('editTaskModal')" class="px-5 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
 
-                            <button type="submit" class="px-5 py-2.5 text-base font-medium text-white bg-red-500 hover:bg-red-600 rounded-md">
+                            Cancel
 
-                                Save changes
+                        </button>
 
-                            </button>
+                        <button type="submit" class="px-5 py-2.5 text-base font-medium text-white bg-red-500 hover:bg-red-600 rounded-md">
 
-                        </div>
+                            Save changes
 
-                    </form>
+                        </button>
 
-                </div>
+                    </div>
+
+                </form>
 
             </div>
 
         </div>
+
+    </div>
 
     <!-- Basic JavaScript for modal handling and keyboard shortcuts -->
     <script>
