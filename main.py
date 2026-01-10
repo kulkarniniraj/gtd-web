@@ -132,6 +132,9 @@ def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
     elif view == "maybe":
         tasks = storage.get_tasks(state="maybe")
         header_title = "Maybe"
+    elif view == "completed":
+        tasks = storage.get_tasks(state="completed")
+        header_title = "Completed"
     elif view == "inbox":  # Default to "inbox"
         tasks = storage.get_tasks(state="inbox")
         header_title = "Inbox"
@@ -383,8 +386,11 @@ def render_sidebar(
                             Span("Completed"),
                             cls="flex items-center gap-3",
                         ),
-                        href="#",
-                        cls="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base",
+                        href="/tasks?view=completed",
+                        hx_get="/tasks?view=completed",
+                        hx_target="#inbox-task-list-inner",
+                        hx_push_url="true",
+                        cls=get_link_classes("completed"),
                     ),
                     cls="space-y-1.5",
                 ),
