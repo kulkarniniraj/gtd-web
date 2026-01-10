@@ -6,6 +6,7 @@ from in_memory_storage import InMemoryStorage, Task
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from starlette.responses import HTMLResponse
+from starlette.requests import Request
 
 from pydantic import BaseModel  # Added this import
 
@@ -157,6 +158,32 @@ def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
         ),
         Div(*task_items, id="inbox-task-list-inner"),
     )
+
+@rt("/toggle-task-complete/{task_id}")
+async def post(task_id: int, request: Request):
+    """Toggles the completion state of a task."""
+    task = storage.get_task_by_id(task_id)
+    if not task:
+        return Div("Task not found", cls="text-red-500")
+
+    if task.state == "completed":
+        new_state = "inbox" 
+        completion_time = None
+    else:
+        new_state = "completed"
+        completion_time = datetime.now()
+
+    storage.update_task(task_id, {"state": new_state, "completed_at": completion_time})
+
+    current_url = request.headers.get("hx-current-url", "")
+    view = "inbox"
+    try:
+        query_params = dict(p.split('=') for p in current_url.split('?')[1].split('&'))
+        view = query_params.get("view", "inbox")
+    except (IndexError, ValueError):
+        pass
+
+    return get_tasks(view=view)
 
 
 def render_sidebar(
