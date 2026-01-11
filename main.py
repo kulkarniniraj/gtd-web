@@ -2,13 +2,16 @@ import calendar
 from fasthtml.common import *
 from fasthtml.svg import *
 from fasthtml.svg import Path as SvgPath
-from in_memory_storage import InMemoryStorage, Task
+
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from starlette.responses import HTMLResponse
 from starlette.requests import Request
 
 from pydantic import BaseModel  # Added this import
+
+from storage_interface import IStorage
+from in_memory_storage import InMemoryStorage, Task
 
 # Initialize the in-memory storage
 storage = InMemoryStorage()
@@ -113,17 +116,34 @@ def render_task_item(task: Task):
     )
 
 
+def get_projects_with_open_task_counts(storage: IStorage) -> List[Dict[str, Any]]:
+    project_counts = {}
+    # Consider all non-completed tasks as "open"
+    open_tasks = [
+        task for task in storage.get_tasks() if task.state != "completed"
+    ]
+    for task in open_tasks:
+        if task.project:
+            project_counts[task.project] = project_counts.get(task.project, 0) + 1
+    
+    projects = [{"name": name, "count": count} for name, count in project_counts.items() if count > 0]
+    return sorted(projects, key=lambda p: p['name'])
+
 @rt("/tasks")
-def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
-    """Fetch and render tasks based on the selected view (inbox, today, active, maybe)."""
+def get_tasks(view: str = "inbox", project: str = None):  # Added project parameter
+    """Fetch and render tasks based on the selected view or project."""
     # Calculate counts for each view
     inbox_count = len(storage.get_tasks(state="inbox"))
     today_tasks = storage.get_tasks(due_date=date.today())
     today_count = len(today_tasks)
     active_count = len(storage.get_tasks(state="active"))
     maybe_count = len(storage.get_tasks(state="maybe"))
+    projects_with_counts = get_projects_with_open_task_counts(storage)
 
-    if view == "today":
+    if project:
+        tasks = storage.get_tasks(project=project, state__ne="completed") # Get all non-completed tasks for a project
+        header_title = f"#{project}"
+    elif view == "today":
         tasks = today_tasks  # Use already fetched tasks
         header_title = "Today"
     elif view == "active":
@@ -139,7 +159,7 @@ def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
         tasks = storage.get_tasks(state="inbox")
         header_title = "Inbox"
     else:
-        # Default fallback, should ideally not be hit with proper frontend setup
+        # Default fallback
         tasks = storage.get_tasks(state="inbox")
         header_title = "Inbox"
 
@@ -148,10 +168,12 @@ def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
     return Group(
         render_sidebar(
             current_view=view,
+            current_project=project,
             inbox_count=inbox_count,
             today_count=today_count,
             active_count=active_count,
             maybe_count=maybe_count,
+            projects=projects_with_counts
         ),
         H1(
             header_title,
@@ -160,6 +182,30 @@ def get_tasks(view: str = "inbox"):  # Renamed function, added view parameter
             hx_swap_oob="true",
         ),
         Div(*task_items, id="inbox-task-list-inner"),
+    )
+
+@rt("/projects-autocomplete")
+def projects_autocomplete(project: str = None, target_input_id: str = 'editTaskProject'):
+    """Returns a list of project names for autocomplete."""
+    q = project or ""
+    if not q:
+        return "" # Return nothing if the query is empty
+    
+    all_projects = storage.get_projects()
+    # Filter projects that start with the query `q`
+    filtered_projects = [p for p in all_projects if q.lower() in p.lower()]
+    
+    # The ID of the suggestions div is derived from the target input ID
+    suggestions_div_id = f"{target_input_id}-suggestions"
+
+    # Return a list of divs for the autocomplete
+    return Group(
+        *(Div(
+            p,
+            # This JS sets the input value and clears the suggestions
+            onclick=f"document.getElementById('{target_input_id}').value = '{p}'; document.getElementById('{suggestions_div_id}').innerHTML = '';",
+            cls="p-2 hover:bg-gray-100 cursor-pointer"
+        ) for p in filtered_projects)
     )
 
 @rt("/toggle-task-complete/{task_id}")
@@ -191,20 +237,42 @@ async def post(task_id: int, request: Request):
 
 def render_sidebar(
     current_view: str,
+    current_project: str = None,
     inbox_count: int = 0,
     today_count: int = 0,
     active_count: int = 0,
     maybe_count: int = 0,
+    projects: List[Dict[str, Any]] = None
 ):
-    """Renders the sidebar, highlighting the current view and displaying task counts."""
+    """Renders the sidebar, highlighting the current view or project and displaying counts."""
+    projects = projects or []
 
-    def get_link_classes(view_name: str):
-
-        if view_name == current_view:
-
+    def get_link_classes(view_name: str = None, project_name: str = None):
+        # Check for view-based highlighting
+        if view_name and view_name == current_view and not current_project:
             return "flex items-center justify-between px-3 py-2 rounded-lg bg-orange-100 text-orange-600 font-medium text-base"
-
+        # Check for project-based highlighting
+        if project_name and project_name == current_project:
+            return "flex items-center justify-between px-3 py-2 rounded-lg bg-orange-100 text-orange-600 font-medium text-base"
+        
         return "flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base"
+
+    # Generate project links dynamically
+    project_links = [
+        A(
+            Div(
+                Span("#", cls="font-semibold text-gray-400"),
+                Span(p['name']),
+                cls="flex items-center gap-3"
+            ),
+            Span(str(p['count']), cls="text-sm text-gray-500") if p['count'] > 0 else None,
+            href=f"/tasks?project={p['name']}",
+            hx_get=f"/tasks?project={p['name']}",
+            hx_target="#inbox-task-list-inner",
+            hx_push_url="true",
+            cls=get_link_classes(project_name=p['name'])
+        ) for p in projects
+    ]
 
     return Aside(
         Div(
@@ -280,7 +348,7 @@ def render_sidebar(
                         hx_get="/tasks?view=inbox",
                         hx_target="#inbox-task-list-inner",
                         hx_push_url="true",
-                        cls=get_link_classes("inbox"),
+                        cls=get_link_classes(view_name="inbox"),
                     ),
                     A(
                         Div(
@@ -308,7 +376,7 @@ def render_sidebar(
                         hx_get="/tasks?view=today",
                         hx_target="#inbox-task-list-inner",
                         hx_push_url="true",
-                        cls=get_link_classes("today"),
+                        cls=get_link_classes(view_name="today"),
                     ),
                     A(
                         Div(
@@ -335,7 +403,7 @@ def render_sidebar(
                         hx_get="/tasks?view=active",
                         hx_target="#inbox-task-list-inner",
                         hx_push_url="true",
-                        cls=get_link_classes("active"),
+                        cls=get_link_classes(view_name="active"),
                     ),
                     A(
                         Div(
@@ -363,7 +431,7 @@ def render_sidebar(
                         hx_get="/tasks?view=maybe",
                         hx_target="#inbox-task-list-inner",
                         hx_push_url="true",
-                        cls=get_link_classes("maybe"),
+                        cls=get_link_classes(view_name="maybe"),
                     ),
                     cls="space-y-1.5",
                 ),
@@ -390,7 +458,7 @@ def render_sidebar(
                         hx_get="/tasks?view=completed",
                         hx_target="#inbox-task-list-inner",
                         hx_push_url="true",
-                        cls=get_link_classes("completed"),
+                        cls=get_link_classes(view_name="completed"),
                     ),
                     cls="space-y-1.5",
                 ),
@@ -401,27 +469,9 @@ def render_sidebar(
                         cls="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider",
                     ),
                     Div(
-                        A(
-                            Div(
-                                Span("#", cls="font-semibold text-gray-400"),
-                                Span("Home"),
-                                cls="flex items-center gap-3",
-                            ),
-                            Span("5", cls="text-sm text-gray-500"),
-                            href="#",
-                            cls="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base",
-                        ),
-                        A(
-                            Div(
-                                Span("#", cls="font-semibold text-gray-400"),
-                                Span("volleyball"),
-                                cls="flex items-center gap-3",
-                            ),
-                            href="#",
-                            cls="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base",
-                        ),
-                        cls="space-y-1.5 mt-2",
-                    ),
+                        *project_links,
+                        cls="space-y-1.5 mt-2"
+                    )
                 ),
                 cls="flex-1 overflow-y-auto px-5",
             ),
@@ -535,9 +585,14 @@ def get(task_id: int):
                 value=task.project if task.project != "default" else "",
                 cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base",
                 placeholder="Project (e.g., #Work)",
+                hx_get="/projects-autocomplete?target_input_id=editTaskProject",
+                hx_trigger="keyup changed delay:250ms",
+                hx_target="#editTaskProject-suggestions",
+                hx_swap="innerHTML"
             ),
-            cls="flex items-center gap-4 mb-6",
+            cls="flex items-center gap-4 mb-6"
         ),
+        Div(id="editTaskProject-suggestions"), # Suggestions will be loaded here
         Div(
             Button(
                 "Cancel",

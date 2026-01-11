@@ -78,3 +78,12 @@ class IStorage(ABC):
         :return: True if deletion was successful, False otherwise.
         """
         pass
+
+    @abstractmethod
+    def get_projects(self) -> List[str]:
+        """
+        Retrieves a list of all unique project names.
+        
+        :return: A list of strings, where each string is a unique project name.
+        """
+        pass

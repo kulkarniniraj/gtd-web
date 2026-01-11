@@ -79,6 +79,10 @@ class InMemoryStorage(IStorage):
             return True
         return False
 
+    def get_projects(self) -> List[str]:
+        projects = {task.project for task in self._tasks.values() if task.project and task.project != "default"}
+        return sorted(list(projects))
+
 # Initialize the in-memory storage
 storage = InMemoryStorage()
 
