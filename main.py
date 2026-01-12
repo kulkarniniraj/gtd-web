@@ -204,7 +204,7 @@ def projects_autocomplete(project: str = None, target_input_id: str = 'editTaskP
             p,
             # This JS sets the input value and clears the suggestions
             onclick=f"document.getElementById('{target_input_id}').value = '{p}'; document.getElementById('{suggestions_div_id}').innerHTML = '';",
-            cls="p-2 hover:bg-gray-100 cursor-pointer"
+            cls="p-2 hover:bg-gray-100 cursor-pointer w-full"
         ) for p in filtered_projects)
     )
 
@@ -578,21 +578,27 @@ def get(task_id: int):
                 id="editTaskSchedule",
                 cls="block w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base",
             ),
-            Input(
-                type="text",
-                id="editTaskProject",
-                name="project",
-                value=task.project if task.project != "default" else "",
-                cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base",
-                placeholder="Project (e.g., #Work)",
-                hx_get="/projects-autocomplete?target_input_id=editTaskProject",
-                hx_trigger="keyup changed delay:250ms",
-                hx_target="#editTaskProject-suggestions",
-                hx_swap="innerHTML"
+            Div(
+                Input(
+                    type="text",
+                    id="editTaskProject",
+                    name="project",
+                    value=task.project if task.project != "default" else "",
+                    cls="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base",
+                    placeholder="Project (e.g., #Work)",
+                    hx_get="/projects-autocomplete?target_input_id=editTaskProject",
+                    hx_trigger="keyup changed delay:250ms",
+                    hx_target="#editTaskProject-suggestions",
+                    hx_swap="innerHTML",
+                    autocomplete="off"
+                ),
+                Div(id="editTaskProject-suggestions", cls="border rounded-md bg-white " + 
+                    "max-h-40 overflow-y-auto absolute top-full left-0 right-0 z-10 shadow-lg"),
+                cls="relative w-full"
             ),
-            cls="flex items-center gap-4 mb-6"
+            cls="flex items-start gap-4 mb-6 relative"
         ),
-        Div(id="editTaskProject-suggestions"), # Suggestions will be loaded here
+        # Div(id="editTaskProject-suggestions", cls="border rounded-md bg-white max-h-40 overflow-y-auto absolute top-full left-0 right-0 z-10 shadow-lg"), # Suggestions will be loaded here
         Div(
             Button(
                 "Cancel",

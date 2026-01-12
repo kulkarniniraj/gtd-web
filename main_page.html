@@ -246,8 +246,7 @@
                         placeholder="Description"></textarea>
                 </div>
 
-                <!-- Project (optional) -->
-                <div class="mb-6">
+                <div class="mb-6 relative">
                     <label for="taskProject" class="block text-base font-medium text-gray-700 mb-2">Project
                         (optional)</label>
                     <input type="text" id="taskProject" name="project"
@@ -256,8 +255,11 @@
                         hx-get="/projects-autocomplete?target_input_id=taskProject"
                         hx-trigger="keyup changed delay:250ms"
                         hx-target="#taskProject-suggestions"
-                        hx-swap="innerHTML">
-                    <div id="taskProject-suggestions"></div>
+                        hx_swap="innerHTML"
+                        autocomplete="off">
+                    <div id="taskProject-suggestions" class="border rounded-md bg-white max-h-40 overflow-y-auto absolute top-full left-0 right-0 z-10 shadow-lg">
+                        <ul id="autocompleteList" class="max-h-60 overflow-y-auto py-1 text-sm"><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apricot</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Avocado</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Banana</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Blackberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Grapes</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Guava</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Mango</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Orange</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Papaya</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Pineapple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Strawberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Watermelon</li></ul>
+                    </div>
                 </div>
 
                 <!-- Bottom buttons -->
@@ -325,7 +327,12 @@
 
                         </button>
 
-                        <input type="text" id="editTaskProject" name="project" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" placeholder="Project (e.g., #Work)" value="">
+                        <div>
+                            <input type="text" id="editTaskProject" name="project" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" placeholder="Project (e.g., #Work)" value="">
+
+                            <ul id="autocompleteList" class="max-h-60 overflow-y-auto py-1 text-sm"><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apricot</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Avocado</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Banana</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Blackberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Grapes</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Guava</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Mango</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Orange</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Papaya</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Pineapple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Strawberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Watermelon</li></ul>
+
+                        </div>
 
                     </div>
 
