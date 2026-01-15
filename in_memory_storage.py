@@ -24,9 +24,15 @@ class InMemoryStorage(IStorage):
         for task in self._tasks.values():
             match = True
             for key, value in filters.items():
-                if not hasattr(task, key) or getattr(task, key) != value:
-                    match = False
-                    break
+                if key.endswith('__ne'):
+                    attr_name = key[:-4] # Remove '__ne'
+                    if hasattr(task, attr_name) and getattr(task, attr_name) == value:
+                        match = False
+                        break
+                else:
+                    if not hasattr(task, key) or getattr(task, key) != value:
+                        match = False
+                        break
             if match:
                 filtered_tasks.append(task)
         return filtered_tasks
