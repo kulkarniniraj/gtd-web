@@ -39,7 +39,22 @@ class EditTaskForm(BaseModel):
 def render_task_item(task: Task):
     date_label = ""
     date_color = ""
-    if task.due_date:
+    date_icon = Svg( # Default calendar icon
+        SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"),
+        cls="w-4 h-4", fill="none", stroke="currentColor", viewBox="0 0 24 24"
+    )
+
+    if task.state == "completed":
+        date_icon = Svg( # Checkmark icon for completed
+            SvgPath(stroke_linecap="round", stroke_linejoin="round", stroke_width="2", d="M5 13l4 4L19 7"),
+             cls="w-4 h-4", fill="none", stroke="currentColor", viewBox="0 0 24 24"
+        )
+        date_color = "text-gray-500"
+        if task.completed_at:
+            date_label = f"Completed {task.completed_at.strftime('%b %d')}"
+        else:
+            date_label = "Completed" # Fallback if completed_at is None
+    elif task.due_date:
         if task.due_date == date.today():
             date_label = "Today"
             date_color = "text-red-600"
@@ -47,9 +62,9 @@ def render_task_item(task: Task):
             date_label = "Overdue"
             date_color = "text-red-800 font-bold"
         else:
-            date_label = task.due_date.strftime("%b %d")  # e.g., Jul 07
-            date_color = "text-gray-500"  # Default for future dates
-
+            date_label = task.due_date.strftime("%b %d") # e.g., Jul 07
+            date_color = "text-gray-500"
+    
     project_html_element = None
     if task.project and task.project != "default":
         project_html_element = Span(
@@ -63,19 +78,6 @@ def render_task_item(task: Task):
             "default",
             cls="flex items-center gap-1.5 px-2 py-0.5 rounded text-sm font-medium bg-gray-100 text-gray-600",
         )
-
-    calendar_svg_element = Svg(
-        SvgPath(
-            stroke_linecap="round",
-            stroke_linejoin="round",
-            stroke_width="2",
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
-        ),
-        cls="w-4 h-4",
-        fill="none",
-        stroke="currentColor",
-        viewBox="0 0 24 24",
-    )
 
     checked_attr = True if task.state == "completed" else False
     line_through_cls = "line-through text-gray-500" if task.state == "completed" else ""
@@ -95,7 +97,7 @@ def render_task_item(task: Task):
             Div(
                 (
                     Span(
-                        calendar_svg_element,
+                        date_icon, # Use dynamic icon
                         date_label,
                         cls=f"flex items-center gap-1.5 text-sm {date_color}",
                     )
