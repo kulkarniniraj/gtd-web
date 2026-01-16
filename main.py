@@ -12,9 +12,11 @@ from pydantic import BaseModel  # Added this import
 
 from storage_interface import IStorage
 from in_memory_storage import InMemoryStorage, Task
+from sqlite_storage import SQLiteStorage
 
 # Initialize the in-memory storage
-storage = InMemoryStorage()
+# storage = InMemoryStorage()
+storage = SQLiteStorage()
 
 # FastHTML App Initialization - using idiomatic pattern
 app, rt = fast_app()

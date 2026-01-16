@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime, date
+from sqlmodel import SQLModel, Field as SQLField
 
-# Pydantic model for Task data transfer
-class Task(BaseModel):
+# SQLModel/Pydantic model for Task data transfer
+class Task(SQLModel, table=True):
     # 'id' is Optional for new tasks, but will be set once stored.
     # It's here for consistency when retrieving tasks.
-    id: Optional[int] = None
+    id: Optional[int] = SQLField(default=None, primary_key=True)
     title: str
     description: Optional[str] = None
     state: str = "inbox"  # inbox | active | maybe | completed
