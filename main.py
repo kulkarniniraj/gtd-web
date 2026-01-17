@@ -271,10 +271,8 @@ def render_sidebar(
                 cls="flex items-center gap-3"
             ),
             Span(str(p['count']), cls="text-sm text-gray-500") if p['count'] > 0 else None,
-            href=f"/tasks?project={p['name']}",
             hx_get=f"/tasks?project={p['name']}",
             hx_target="#inbox-task-list-inner",
-            hx_push_url="true",
             cls=get_link_classes(project_name=p['name'])
         ) for p in projects
     ]
@@ -349,10 +347,8 @@ def render_sidebar(
                             if inbox_count > 0
                             else None
                         ),
-                        href="/tasks?view=inbox",
                         hx_get="/tasks?view=inbox",
                         hx_target="#inbox-task-list-inner",
-                        hx_push_url="true",
                         cls=get_link_classes(view_name="inbox"),
                     ),
                     A(
@@ -377,10 +373,8 @@ def render_sidebar(
                             if today_count > 0
                             else None
                         ),
-                        href="/tasks?view=today",
                         hx_get="/tasks?view=today",
                         hx_target="#inbox-task-list-inner",
-                        hx_push_url="true",
                         cls=get_link_classes(view_name="today"),
                     ),
                     A(
@@ -404,10 +398,8 @@ def render_sidebar(
                             if active_count > 0
                             else None
                         ),
-                        href="/tasks?view=active",
                         hx_get="/tasks?view=active",
                         hx_target="#inbox-task-list-inner",
-                        hx_push_url="true",
                         cls=get_link_classes(view_name="active"),
                     ),
                     A(
@@ -432,10 +424,8 @@ def render_sidebar(
                             if maybe_count > 0
                             else None
                         ),
-                        href="/tasks?view=maybe",
                         hx_get="/tasks?view=maybe",
                         hx_target="#inbox-task-list-inner",
-                        hx_push_url="true",
                         cls=get_link_classes(view_name="maybe"),
                     ),
                     cls="space-y-1.5",
@@ -459,10 +449,8 @@ def render_sidebar(
                             Span("Completed"),
                             cls="flex items-center gap-3",
                         ),
-                        href="/tasks?view=completed",
                         hx_get="/tasks?view=completed",
                         hx_target="#inbox-task-list-inner",
-                        hx_push_url="true",
                         cls=get_link_classes(view_name="completed"),
                     ),
                     cls="space-y-1.5",
