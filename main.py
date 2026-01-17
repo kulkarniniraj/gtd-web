@@ -139,7 +139,8 @@ def get_tasks(view: str = "inbox", project: str = None):  # Added project parame
     # Calculate counts for each view
     inbox_count = len(storage.get_tasks(state="inbox"))
     today_tasks = storage.get_tasks(due_date=date.today())
-    today_count = len(today_tasks)
+    today_count = len(storage.get_tasks(due_date=date.today(), state__ne="completed"))
+    # today_count = len(today_tasks)
     active_count = len(storage.get_tasks(state="active"))
     maybe_count = len(storage.get_tasks(state="maybe"))
     projects_with_counts = get_projects_with_open_task_counts(storage)
