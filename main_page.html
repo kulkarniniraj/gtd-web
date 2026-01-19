@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTD App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX Library -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Rounded checkboxes */
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            border-width: 1px;
+            background-color: white;
+            border-color: #d1d5db;
+            /* gray-300 */
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: #ef4444;
+            /* red-500, similar to todoist primary color */
+            border-color: #ef4444;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            background-size: 60%;
+            background-position: 50%;
+            background-repeat: no-repeat;
+        }
+
+        input[type="checkbox"].rounded-full {
+            /* Apply directly to input with this class */
+            border-radius: 9999px;
+            /* Make it circular */
+        }
+    </style>
+</head>
+
+<body class="bg-white text-gray-900 flex flex-col min-h-screen">
+
+    <div class="flex flex-1">
+        <!-- Left Sidebar -->
+        <aside id="left-sidebar" class="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
+            <div class="flex flex-col flex-1">
+                <!-- Header -->
+                <div class="p-5 border-b border-gray-200">
+                    <h1 class="text-xl font-bold text-gray-800">GTD App</h1>
+                </div>
+
+                <div class="p-5">
+                    <button onclick="openModal('newTaskModal')"
+                        class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-red-500 hover:bg-red-600 rounded-lg shadow-sm text-white text-base font-medium">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        <span>Add task</span>
+                    </button>
+                    <div class="mt-4 relative">
+                        <svg class="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" placeholder="Search"
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base">
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex-1 overflow-y-auto px-5">
+                    <!-- Section 1: Primary Views -->
+                    <div class="space-y-1.5">
+                        <a href="/tasks?view=inbox" hx-get="/tasks?view=inbox" hx-target="#inbox-task-list-inner" hx-push-url="true"
+                            class="flex items-center justify-between px-3 py-2 rounded-lg bg-orange-100 text-orange-600 font-medium text-base">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <span>Inbox</span>
+                            </div>
+                            <span class="text-sm font-semibold">13</span>
+                        </a>
+                        <a href="/tasks?view=today" hx-get="/tasks?view=today" hx-target="#inbox-task-list-inner" hx-push-url="true"
+                            class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <span>Today</span>
+                            </div>
+                        </a>
+                        <a href="#"
+                            class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z">
+                                    </path>
+                                </svg>
+                                <span>Active</span>
+                            </div>
+                        </a>
+                        <a href="#"
+                            class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <span>Maybe</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <hr class="my-4 border-gray-200">
+
+                    <!-- Section 2: Archive -->
+                    <div class="space-y-1.5">
+                        <a href="#"
+                            class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Completed</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <hr class="my-4 border-gray-200">
+
+                    <!-- Section 3: Projects -->
+                    <div>
+                        <h3 class="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">My Projects
+                        </h3>
+                        <div class="space-y-1.5 mt-2">
+                            <a href="#"
+                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-semibold text-gray-400">#</span>
+                                    <span>Home</span>
+                                </div>
+                                <span class="text-sm text-gray-500">5</span>
+                            </a>
+                            <a href="#"
+                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 font-medium text-base">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-semibold text-gray-400">#</span>
+                                    <span>volleyball</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-5 border-t border-gray-200">
+                <a href="#" class="flex items-center gap-3 text-gray-600 hover:text-gray-800 text-base font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Settings
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <div class="p-5 border-b border-gray-200">
+                <div class="max-w-4xl mx-auto flex items-center justify-between">
+                    <h1 id="main-content-header" class="text-2xl font-bold">Inbox</h1>
+                    <!-- Icons removed as per design decisions -->
+                </div>
+            </div>
+
+            <!-- Task List -->
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="inbox-task-list" class="space-y-2 max-w-4xl mx-auto" hx-get="/tasks" hx-trigger="load">
+                    <div class="p-4 text-center text-gray-500">Loading tasks...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Global Footer -->
+    <footer class="bg-gray-50 border-t border-gray-200 p-4 w-full">
+        <div class="flex items-center justify-center gap-6 text-sm text-gray-500">
+            <span class="font-semibold text-gray-700">Keyboard shortcuts:</span>
+            <div class="flex items-center gap-2">
+                <kbd class="font-sans font-semibold text-gray-700 bg-gray-200 rounded-md px-2 py-0.5">Q</kbd>
+                <span>Add Task</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <kbd class="font-sans font-semibold text-gray-700 bg-gray-200 rounded-md px-2 py-0.5">F</kbd>
+                <span>Search</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <kbd class="font-sans font-semibold text-gray-700 bg-gray-200 rounded-md px-2 py-0.5">?</kbd>
+                <span>Show All Shortcuts</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- New Task Modal Overlay -->
+    <div id="newTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <!-- Hidden by default -->
+        <!-- Modal -->
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 relative p-6">
+            <!-- Modal Content -->
+            <form hx-post="/add-task" hx-target="#inbox-task-list-inner" hx-swap="innerHTML">
+                <!-- Task name -->
+                <div class="mb-4">
+                    <label for="taskName" class="block text-base font-medium text-gray-700 mb-2">Task name</label>
+                    <input type="text" id="taskName" name="title"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base"
+                        placeholder="Task name" autofocus>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <label for="taskDescription" class="block text-base font-medium text-gray-700 mb-2">Description
+                        (optional)</label>
+                    <textarea id="taskDescription" name="description"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-y h-24 text-base"
+                        placeholder="Description"></textarea>
+                </div>
+
+                <div class="mb-6 relative">
+                    <label for="taskProject" class="block text-base font-medium text-gray-700 mb-2">Project
+                        (optional)</label>
+                    <input type="text" id="taskProject" name="project"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base"
+                        placeholder="e.g., #Work or #Home"
+                        hx-get="/projects-autocomplete?target_input_id=taskProject"
+                        hx-trigger="keyup changed delay:250ms"
+                        hx-target="#taskProject-suggestions"
+                        hx_swap="innerHTML"
+                        autocomplete="off">
+                    <div id="taskProject-suggestions" class="border rounded-md bg-white max-h-40 overflow-y-auto absolute top-full left-0 right-0 z-10 shadow-lg">
+                        
+                    </div>
+                </div>
+
+                <!-- Bottom buttons -->
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeModal('newTaskModal')"
+                        class="px-5 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2.5 text-base font-medium text-white bg-red-500 hover:bg-red-600 rounded-md">
+                        Add task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- </div> -->
+
+    <!-- Edit Task Modal Overlay -->
+
+    <div id="editTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"> <!-- Hidden by default -->
+
+        <!-- Modal -->
+
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 relative p-6">
+
+            <!-- Modal Content -->
+
+            <div id="editTaskModal-content-area">
+
+                                    <form hx-put="/update-task/{{task.id}}" hx-target="#inbox-task-list-inner" hx-swap="innerHTML">
+                    <!-- Task name -->
+
+                    <div class="mb-4">
+
+                        <label for="editTaskName" class="block text-base font-medium text-gray-700 mb-2">Task name</label>
+
+                        <input type="text" id="editTaskName" name="title" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" value="">
+
+                    </div>
+
+
+
+                    <!-- Description -->
+
+                    <div class="mb-4">
+
+                        <label for="editTaskDescription" class="block text-base font-medium text-gray-700 mb-2">Description</label>
+
+                        <textarea id="editTaskDescription" name="description" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-y h-24 text-base"></textarea>
+
+                    </div>
+
+
+
+                    <!-- Action buttons row -->
+
+                    <div class="flex items-center gap-4 mb-6">
+
+                        <button type="button" class="flex items-center gap-1.5 px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md border border-gray-300">
+
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+
+                            Date
+
+                        </button>
+
+                        <div>
+                            <input type="text" id="editTaskProject" name="project" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-base" placeholder="Project (e.g., #Work)" value="">
+
+                            <ul id="autocompleteList" class="max-h-60 overflow-y-auto py-1 text-sm"><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Apricot</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Avocado</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Banana</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Blackberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Grapes</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Guava</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Mango</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Orange</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Papaya</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Pineapple</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Strawberry</li><li class="cursor-pointer px-3 py-2 hover:bg-blue-50 hover:text-blue-700">Watermelon</li></ul>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Bottom buttons -->
+
+                    <div class="flex items-center justify-end gap-3">
+
+                        <button type="button" onclick="closeModal('editTaskModal')" class="px-5 py-2.5 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">
+
+                            Cancel
+
+                        </button>
+
+                        <button type="submit" class="px-5 py-2.5 text-base font-medium text-white bg-red-500 hover:bg-red-600 rounded-md">
+
+                            Save changes
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Basic JavaScript for modal handling and keyboard shortcuts -->
+    <script>
+        // Modal helper functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Focus first input in modal
+                const firstInput = modal.querySelector('input, textarea');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function (event) {
+            const newTaskModal = document.getElementById('newTaskModal');
+            const editTaskModal = document.getElementById('editTaskModal');
+
+            if (newTaskModal && !newTaskModal.querySelector('.bg-white').contains(event.target) && !event.target.closest('button[data-open-modal="newTaskModal"]')) {
+                if (!newTaskModal.classList.contains('hidden') && event.target === newTaskModal) {
+                    closeModal('newTaskModal');
+                }
+            }
+
+            console.log(event.target)
+            console.log(editTaskModal)
+
+            if (editTaskModal && !editTaskModal.querySelector('.bg-white').contains(event.target)) {
+                if (!editTaskModal.classList.contains('hidden') && event.target === editTaskModal) {
+                    closeModal('editTaskModal');
+                }
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal('newTaskModal');
+                closeModal('editTaskModal');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Cancel buttons - close modals
+            document.querySelectorAll('button').forEach(button => {
+                if (button.textContent.trim() === 'Cancel') {
+                    button.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const modal = this.closest('[id$="Modal"]');
+                        if (modal) {
+                            closeModal(modal.id);
+                        }
+                    });
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function (event) {
+                // Q - Open add task modal (only if not typing in an input)
+                if (event.key === 'q' || event.key === 'Q') {
+                    const activeElement = document.activeElement;
+                    if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                        event.preventDefault();
+                        openModal('newTaskModal');
+                    }
+                }
+
+                // F - Focus search input (only if not typing in an input)
+                if (event.key === 'f' || event.key === 'F') {
+                    const activeElement = document.activeElement;
+                    if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                        event.preventDefault();
+                        const searchInput = document.querySelector('input[placeholder="Search"]');
+                        if (searchInput) {
+                            searchInput.focus();
+                        }
+                    }
+                }
+            });
+        });
+
+
+        // HTMX event listeners for better UX
+        document.body.addEventListener('htmx:afterSwap', function (event) {
+            // After HTMX swaps content, you can add custom logic here
+            console.log('HTMX swap completed', event.detail);
+        });
+
+        document.body.addEventListener('htmx:responseError', function (event) {
+            console.error('HTMX request error', event.detail);
+            alert('An error occurred. Please try again.');
+        });
+
+                document.body.addEventListener('taskAdded', function(event) {
+
+                    closeModal('newTaskModal');
+
+                    // Clear the form fields after successful submission and modal closure
+
+                    document.getElementById('taskName').value = '';
+
+                    document.getElementById('taskDescription').value = '';
+
+                    document.getElementById('taskProject').value = '';
+
+                });
+
+        
+
+                document.body.addEventListener('taskEdited', function(event) {
+
+                    closeModal('editTaskModal');
+
+                    // Clear the form fields after successful submission and modal closure
+
+                    document.getElementById('editTaskName').value = '';
+
+                    document.getElementById('editTaskDescription').value = '';
+
+                    document.getElementById('editTaskProject').value = '';
+
+                });
+
+            </script>
+
+</body>
+
+</html>
