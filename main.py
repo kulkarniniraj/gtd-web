@@ -158,7 +158,8 @@ def get_tasks(view: str = "inbox", project: str = None):  # Added project parame
         tasks = storage.get_tasks(state="maybe")
         header_title = "Maybe"
     elif view == "completed":
-        tasks = storage.get_tasks(state="completed")
+        tasks_orig = storage.get_tasks(state="completed")
+        tasks = sorted(tasks_orig, key=lambda t: t.completed_at or datetime.min, reverse=True)
         header_title = "Completed"
     elif view == "inbox":  # Default to "inbox"
         tasks = storage.get_tasks(state="inbox")
